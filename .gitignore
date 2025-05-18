@@ -1,6 +1,7 @@
 # Ignore all .txt and .tsv files (data files)
 *.txt
 *.tsv
+*.xlsx
 
 # Ignore backup and temp files
 *~

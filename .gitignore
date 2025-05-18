@@ -2,11 +2,7 @@
 *.txt
 *.tsv
 
-# If you want to exclude only in specific folders, e.g., data/
-# data/*.txt
-# data/*.tsv
-
-# Optional: Ignore backup and temp files
+# Ignore backup and temp files
 *~
 *.bak
 *.tmp

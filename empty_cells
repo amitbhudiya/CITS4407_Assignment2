@@ -15,21 +15,20 @@ if [ ! -f "$file" ]; then
     exit 1
 fi
 
-# Get the header line to extract column names
-header=$(head -1 "$file")
+header=$(head -1 "$file" | tr -d '\r')
 
-# Count the number of columns using the separator
-num_columns=$(echo "$header" | awk -F"$separator" '{print NF}')
+# Count columns using a trick to force last field even if it's empty
+num_columns=$(awk -F"$separator" '{print NF}' <<< "$header")
 
-# Process the file to count empty cells in each column
+# Extract column names into array (ensures blank columns aren’t miscounted)
+IFS="$separator" read -ra column_names <<< "$header"
+
+echo "Number of columns: $num_columns"
+
 for (( i=1; i<=num_columns; i++ )); do
-    # Extract column name
-    column_name=$(echo "$header" | awk -F"$separator" -v col="$i" '{print $col}')
-    
-    # Count empty cells in this column
-    # An empty cell is when there's nothing between two separators, at the start before a separator, or at the end after a separator
-    empty_count=$(awk -F"$separator" -v col="$i" 'NR>1 && ($col == "" || $col ~ /^[[:space:]]*$/) {count++} END {print (count > 0) ? count : 0}' "$file")
-    
-    # Print column name and empty cell count
-        echo "$column_name: $empty_count"
+    column_name="${column_names[i-1]}"
+    empty_count=$(awk -F"$separator" -v col="$i" 'NR>1 && ($col == "" || $col ~ /^[[:space:]]*$/) {count++} END {print count+0}' "$file")
+    echo "$column_name: $empty_count"
 done
+
+

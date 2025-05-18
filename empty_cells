@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Check if filename and separator are provided
+if [ $# -lt 2 ]; then
+    echo "Usage: $0 <filename> <separator>"
+    exit 1
+fi
+
+file=$1
+separator=$2
+
+# Check if file exists
+if [ ! -f "$file" ]; then
+    echo "Error: File $file does not exist"
+    exit 1
+fi
+
+# Get the header line to extract column names
+header=$(head -1 "$file")
+
+# Count the number of columns using the separator
+num_columns=$(echo "$header" | awk -F"$separator" '{print NF}')
+
+# Process the file to count empty cells in each column
+for (( i=1; i<=num_columns; i++ )); do
+    # Extract column name
+    column_name=$(echo "$header" | awk -F"$separator" -v col="$i" '{print $col}')
+    
+    # Count empty cells in this column
+    # An empty cell is when there's nothing between two separators, at the start before a separator, or at the end after a separator
+    empty_count=$(awk -F"$separator" -v col="$i" 'NR>1 && ($col == "" || $col ~ /^[[:space:]]*$/) {count++} END {print (count > 0) ? count : 0}' "$file")
+    
+    # Print column name and empty cell count
+        echo "$column_name: $empty_count"
+done

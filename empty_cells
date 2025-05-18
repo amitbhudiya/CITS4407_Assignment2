@@ -15,15 +15,14 @@ if [ ! -f "$file" ]; then
     exit 1
 fi
 
+# Get header and trim trailing newline
 header=$(head -1 "$file" | tr -d '\r')
 
 # Count columns using a trick to force last field even if it's empty
 num_columns=$(awk -F"$separator" '{print NF}' <<< "$header")
 
-# Extract column names into array (ensures blank columns aren’t miscounted)
+# Extract column names into array and count empty cells
 IFS="$separator" read -ra column_names <<< "$header"
-
-echo "Number of columns: $num_columns"
 
 for (( i=1; i<=num_columns; i++ )); do
     column_name="${column_names[i-1]}"

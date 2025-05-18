@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# Check if input file is provided
+if [ $# -lt 1 ]; then
+    echo "Usage: $0 <input_file>"
+    exit 1
+fi
+
+input_file=$1
+
+# Check if input file exists
+if [ ! -f "$input_file" ]; then
+    echo "Error: File $input_file does not exist"
+    exit 1
+fi
+
+# Find the largest ID in the file to create new IDs for empty ones
+largest_id=$(awk -F";" 'NR>1 && $1 ~ /^[0-9]+$/ {if($1>max) max=$1} END {print max}' "$input_file")
+
+# Initialize counter for generating new IDs
+new_id=$((largest_id + 1))
+
+# Process the file line by line
+# 1. Convert semicolons to tabs
+# 2. Convert DOS line endings to Unix
+# 3. Replace commas with periods in numbers
+# 4. Remove non-ASCII characters
+# 5. Generate new IDs for empty ID cells
+while IFS= read -r line || [ -n "$line" ]; do
+    # Check if this is the header line
+    if [ "$header_processed" != "true" ]; then
+        header_processed=true
+        # Process header: convert separator only
+        echo "$line" | tr ';' '\t' | tr -d '\r' | tr -cd '[:print:]\t\n'
+    else
+        # Check if ID is empty and generate a new one if needed
+        if [[ "$line" =~ ^[[:space:]]*\; ]]; then
+            line="$new_id;${line#;}"
+            new_id=$((new_id + 1))
+        fi
+        
+        # Process data line: convert separator, fix line endings, replace commas with periods, remove non-ASCII
+        echo "$line" | tr ';' '\t' | tr -d '\r' | sed 's/\([0-9]\),\([0-9]\)/\1.\2/g' | tr -cd '[:print:]\t\n'
+    fi
+done < "$input_file"

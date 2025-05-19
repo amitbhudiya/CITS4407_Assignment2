@@ -1,1 +1,91 @@
 #!/bin/bash
+
+
+#!/bin/bash
+
+# Check if input file is provided
+if [ $# -lt 1 ]; then
+    echo "Usage: $0 <cleaned_input_file>"
+    exit 1
+fi
+
+input_file=$1
+
+# Check if input file exists
+if [ ! -f "$input_file" ]; then
+    echo "Error: File $input_file does not exist"
+    exit 1
+fi
+
+
+# Temporary files for calculations
+temp_dir=$(mktemp -d)
+mechanics_file="$temp_dir/mechanics.txt"
+domains_file="$temp_dir/domains.txt"
+ratings_year_file="$temp_dir/ratings_year.txt"
+ratings_complexity_file="$temp_dir/ratings_complexity.txt"
+
+# Extract mechanics and count occurrences
+awk -F'\t' 'NR>1 && $13!="" {split($13, mech, ", "); for (i in mech) print mech[i]}' "$input_file" | sort | uniq -c | sort -nr > "$mechanics_file"
+
+# Extract domains and count occurrences
+awk -F'\t' 'NR>1 && $14!="" {split($14, dom, ", "); for (i in dom) print dom[i]}' "$input_file" | sort | uniq -c | sort -nr > "$domains_file"
+
+# Extract year and rating for correlation
+awk -F'\t' 'NR>1 && $3!="" && $9!="" {print $3, $9}' "$input_file" > "$ratings_year_file"
+
+# Extract complexity and rating for correlation
+awk -F'\t' 'NR>1 && $11!="" && $9!="" {print $11, $9}' "$input_file" > "$ratings_complexity_file"
+
+
+# Function to calculate Pearson correlation coefficient
+calculate_correlation() {
+    local data_file=$1
+    
+    # Calculate sums and products for correlation formula
+    awk '{
+        n++
+        sum_x += $1
+        sum_y += $2
+        sum_xy += $1 * $2
+        sum_x2 += $1 * $1
+        sum_y2 += $2 * $2
+    } END {
+        # Pearson correlation formula
+        numerator = n * sum_xy - sum_x * sum_y
+        denominator_x = sqrt(n * sum_x2 - sum_x * sum_x)
+        denominator_y = sqrt(n * sum_y2 - sum_y * sum_y)
+        denominator = denominator_x * denominator_y
+        
+        if (denominator == 0) {
+            print "Correlation cannot be calculated (division by zero)"
+        } else {
+            correlation = numerator / denominator
+            printf "%.3f", correlation
+        }
+    }' "$data_file"
+}
+
+# Get most popular mechanics
+most_popular_mechanic=$(head -1 "$mechanics_file" | awk '{$1=$1; print}')
+mechanic_count=$(echo "$most_popular_mechanic" | awk '{print $1}')
+mechanic_name=$(echo "$most_popular_mechanic" | awk '{$1=""; print $0}' | sed 's/^ *//')
+
+# Get most popular domain
+most_popular_domain=$(head -1 "$domains_file" | awk '{$1=$1; print}')
+domain_count=$(echo "$most_popular_domain" | awk '{print $1}')
+domain_name=$(echo "$most_popular_domain" | awk '{$1=""; print $0}' | sed 's/^ *//')
+
+# Calculate correlations
+year_rating_correlation=$(calculate_correlation "$ratings_year_file")
+complexity_rating_correlation=$(calculate_correlation "$ratings_complexity_file")
+
+# Print results
+echo "The most popular game mechanics is $mechanic_name found in $mechanic_count games"
+echo "The most game domain is $domain_name found in $domain_count games"
+echo ""
+echo "The correlation between the year of publication and the average rating is $year_rating_correlation"
+echo "The correlation between the complexity of a game and its average rating is $complexity_rating_correlation"
+
+# Clean up temporary files
+rm -rf "$temp_dir"

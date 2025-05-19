@@ -41,3 +41,26 @@ This script analyzes the cleaned data to answer four research questions:
 - What is the correlation between game complexity and average rating?
 
 **Output:** The answers to the research questions.
+
+### Example Usage
+```bash
+# Check for empty cells in the original data
+./empty_cells sample.txt ";"
+
+# Clean the data
+./preprocess sample.txt > sample_cleaned.tsv
+
+# Analyze the cleaned data
+./analysis sample_cleaned.tsv
+```
+### Requirements
+
+- Bash shell
+- Basic Unix utilities: awk, sort, uniq, tr, sed
+
+### Implementation Notes
+
+- The scripts use temporary files for intermediate calculations which are automatically cleaned up. I have used `rm -rf "$temp_dir"`
+- For correlation calculations, the Pearson correlation formula is used with help from https://www.cuemath.com/data/how-to-calculate-correlation-coefficient/
+- Empty cells are properly handled during analysis to ensure accurate results.
+- Each script includes error checking for input parameters and file existence.

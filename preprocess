@@ -23,7 +23,7 @@ new_id=$((largest_id + 1))
 # Process the file line by line
 # 1. Convert semicolons to tabs
 # 2. Convert DOS line endings to Unix
-# 3. Replace commas with periods in numbers
+# 3. Replace commas with decimal points
 # 4. Remove non-ASCII characters
 # 5. Generate new IDs for empty ID cells
 while IFS= read -r line || [ -n "$line" ]; do

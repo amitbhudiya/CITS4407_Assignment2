@@ -1,8 +1,5 @@
 #!/bin/bash
 
-
-#!/bin/bash
-
 # Check if input file is provided
 if [ $# -lt 1 ]; then
     echo "Usage: $0 <cleaned_input_file>"
